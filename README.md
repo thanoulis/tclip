@@ -1,5 +1,5 @@
 # tClip
-**tClip** is a simple clipboard manager written in core [Tcl/Tk](https://www.tcl.tk)
+**tClip** is a simple clipboard manager written in core [Tcl/Tk](https://www.tcl.tk).
 
 ##### Features:
 * On Top
