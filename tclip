@@ -54,7 +54,7 @@ Copyright (c) Thanos Zygouris
 ################################################################################
 # MAIN MENU
 #
-proc createMenus {} {
+proc createMenu {} {
     menu .m -tearoff 0
         menu .m.clipboard -tearoff 0
         .m add cascade -label "Clipboard" -underline 0 -menu .m.clipboard
@@ -162,7 +162,7 @@ proc createBindings {} {
 ################################################################################
 # MAIN PROGRAM
 #
-createMenus
+createMenu
 createWidgets
 createBindings
 focus .text
