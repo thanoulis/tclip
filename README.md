@@ -6,6 +6,7 @@
 * Tk Themes
 * Editable Text
 * Add custom Clips
+* Runs in GNU/Linux, MS-Windows and Unix (MacOS not tested)
 
 ### Screenshot
 ![Screenshot](images/screenshot.png "Screenshot")
