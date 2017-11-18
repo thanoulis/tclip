@@ -1,7 +1,7 @@
 # tClip
 **tClip** is a simple clipboard manager written in [Tcl/Tk](https://www.tcl.tk)
 
-![Screenshot](screenshot.png "Screenshot")
+![Screenshot](images/screenshot.png "Screenshot")
 
 ## DEPENDENCIES
 **Tcl** version 8.5 or later.
