@@ -1,5 +1,5 @@
 # tClip
-**tClip** is a simple clipboard manager written in [Tcl/tk] (https://www.tcl.tk)
+**tClip** is a simple clipboard manager written in [Tcl/tk](https://www.tcl.tk)
 
 ![Screenshot](screenshot.png "Screenshot")
 
