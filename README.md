@@ -1,7 +1,7 @@
-# tclip
+# tClip
 **tClip** is a simple clipboard manager written in [Tcl/tk] (https://www.tcl.tk)
 
-![alt text] (https://github.com/thanoulis/tclip/raw/master/screenshot.png "Screenshot")
+[Screenshot] (https://github.com/thanoulis/tclip/raw/master/screenshot.png "Screenshot")
 
 ## DEPENDENCIES
 **Tcl** version 8.5 or later.
