@@ -17,7 +17,7 @@ proc replaceText {data} {
     .text replace 0.0 end $data
 }
 
-proc clipList {{text ""}} {
+proc updateList {{text ""}} {
     if [catch {set tClip::selected [clipboard get -type $tClip::type]}] {return}
     if {$tClip::selected ni $tClip::cliplist} {
         lappend tClip::cliplist $tClip::selected
@@ -29,7 +29,7 @@ proc clipAppend {data {text ""}} {
     clipboard clear
     clipboard append -type STRING -- $data
     if {$text eq "replace"} {replaceText $data}
-    clipList
+    updateList
 }
 
 proc undoRedo {text command} {
@@ -149,7 +149,10 @@ proc createBindings {} {
     }
     bind .text <3> {focus %W; tk_popup .menu.edit %X %Y}
 
-    bind .combobox <Enter>              {clipList replace}
+    foreach widget [list .text .combobox] {
+        bind $widget <Enter> {updateList replace}
+    }
+
     bind .combobox <<ComboboxSelected>> {clipAppend $tClip::selected replace}
 }
 
@@ -162,8 +165,15 @@ createBindings
 focus .text
 
 # check clipboard on program start
-clipList replace
+updateList replace
 
 wm title    . "tClip"
 wm minsize  . 300 150
 wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
+
+################################################################################
+# COMMAND LINE
+#
+if {$::argc > 0} {
+    clipAppend [lindex $::argv end] replace
+}
