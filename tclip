@@ -55,51 +55,46 @@ Copyright (c) Thanos Zygouris
 # MAIN MENU
 #
 proc createMenu {} {
-    menu .m -tearoff 0
-        menu .m.clipboard -tearoff 0
-        .m add cascade -label "Clipboard" -underline 0 -menu .m.clipboard
-            .m.clipboard add command -label "Add to Clipboard" -underline 0 -state disabled \
-                -accelerator "F3" -command {clipAppend [.text get 0.0 end-1char]}
-            .m.clipboard add command -label "Clear Clipboard" -underline 0 \
-                -command {clipboard clear}
-            .m.clipboard add separator
-            .m.clipboard add command -label "Exit" -underline 1 \
-                -accelerator "Ctrl+Q" -command {exit}
-        menu .m.edit -tearoff 0
-        .m add cascade -label "Edit" -underline 0 -menu .m.edit
-            .m.edit add command -label "Undo" -underline 0 \
-                -accelerator "Ctrl+Z" -command {undoRedo .text undo}
-            .m.edit add command -label "Redo" -underline 0 \
-                -accelerator "Ctrl+Shift+Z" -command {undoRedo .text redo}
-            .m.edit add separator
-            .m.edit add command -label "Cut" -underline 2 \
-                -accelerator "Ctrl+X" -command {tk_textCut .text}
-            .m.edit add command -label "Copy" -underline 0 \
-                -accelerator "Ctrl+C" -command {tk_textCopy .text}
-            .m.edit add command -label "Paste" -underline 0 \
-                -accelerator "Ctrl+V" -command {tk_textPaste .text}
-            .m.edit add separator
-            .m.edit add command -label "Select All" -underline 7 \
-                -accelerator "Ctrl+A" -command {selectAll .text}
-        menu .m.options -tearoff 0
-        .m add cascade -label "Options" -underline 0 -menu .m.options
-            .m.options add checkbutton -label "On Top" -underline 1 \
-                -accelerator "F2" \
-                -variable tClip::on_top -onvalue "true" -offvalue "false" \
-                -command {wm attributes . -topmost $tClip::on_top}
-            .m.options add separator
-            menu .m.options.themes -tearoff 0
-            .m.options add cascade -label "Themes" -underline 0 -menu .m.options.themes
-                foreach theme [ttk::style theme names] {
-                    .m.options.themes add radiobutton -label $theme \
-                        -variable tClip::theme -value $theme \
-                        -command [list ttk::style theme use $theme]
-                }
-        menu .m.help -tearoff 0
-        .m add cascade -label "Help" -underline 0 -menu .m.help
-            .m.help add command -label "About tClip..." -underline 0 \
-                -accelerator "F1" -command {helpAbout}
-    . configure -menu .m
+    option add *tearOff false
+    . configure -menu [menu .menu]
+    .menu add cascade -label "Clipboard" -underline 0 -menu [menu .menu.clipboard]
+        .menu.clipboard add command -label "Add to Clipboard" -underline 0 -state disabled \
+            -accelerator "F3" -command {clipAppend [.text get 0.0 end-1char]}
+        .menu.clipboard add command -label "Clear Clipboard" -underline 0 \
+            -command {clipboard clear}
+        .menu.clipboard add separator
+        .menu.clipboard add command -label "Exit" -underline 1 \
+            -accelerator "Ctrl+Q" -command {exit}
+    .menu add cascade -label "Edit" -underline 0 -menu [menu .menu.edit]
+        .menu.edit add command -label "Undo" -underline 0 \
+            -accelerator "Ctrl+Z" -command {undoRedo .text undo}
+        .menu.edit add command -label "Redo" -underline 0 \
+            -accelerator "Ctrl+Shift+Z" -command {undoRedo .text redo}
+        .menu.edit add separator
+        .menu.edit add command -label "Cut" -underline 2 \
+            -accelerator "Ctrl+X" -command {tk_textCut .text}
+        .menu.edit add command -label "Copy" -underline 0 \
+            -accelerator "Ctrl+C" -command {tk_textCopy .text}
+        .menu.edit add command -label "Paste" -underline 0 \
+            -accelerator "Ctrl+V" -command {tk_textPaste .text}
+        .menu.edit add separator
+        .menu.edit add command -label "Select All" -underline 7 \
+            -accelerator "Ctrl+A" -command {selectAll .text}
+    .menu add cascade -label "Options" -underline 0 -menu [menu .menu.options]
+        .menu.options add checkbutton -label "On Top" -underline 1 \
+            -accelerator "F2" \
+            -variable tClip::on_top -onvalue "true" -offvalue "false" \
+            -command {wm attributes . -topmost $tClip::on_top}
+        .menu.options add separator
+        .menu.options add cascade -label "Themes" -underline 0 -menu [menu .menu.themes]
+            foreach theme [ttk::style theme names] {
+                .menu.themes add radiobutton -label $theme \
+                    -variable tClip::theme -value $theme \
+                    -command [list ttk::style theme use $theme]
+            }
+    .menu add cascade -label "Help" -underline 0 -menu [menu .menu.help]
+        .menu.help add command -label "About tClip..." -underline 0 \
+            -accelerator "F1" -command {helpAbout}
 }
 
 ################################################################################
@@ -107,7 +102,7 @@ proc createMenu {} {
 #
 proc createWidgets {} {
     ttk::combobox .combobox -textvariable tClip::selected \
-        -state readonly \
+        -takefocus 0 -state readonly \
         -values tClip::cliplist \
         -postcommand {.combobox configure -values $tClip::cliplist}
     tk::text .text -relief flat -highlightthickness 0 -takefocus 0 \
