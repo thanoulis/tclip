@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=tClip
+GenericName=Clipboard Manager
+Comment=A simple clipboard manager written in core Tcl/Tk
+Exec=tclip %F
+Icon=document-properties
+Type=Application
+Terminal=false
+Keywords=Clipboard;
+Categories=Utility;
+StartupNotify=false
