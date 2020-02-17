@@ -2,49 +2,52 @@
 
 package require Tk
 
+################################################################################
+# VARIABLES
+#
 namespace eval tClip {
-    variable on_top    false
-    variable word_wrap none
-    variable selected  ""
-    variable cliplist  [list]
-    variable theme     [ttk::style theme use]
-    variable type      [expr {[tk windowingsystem] eq "x11" ? "UTF8_STRING" : "STRING"}]
+  variable on_top    false
+  variable word_wrap none
+  variable selected  ""
+  variable cliplist  [list]
+  variable theme     [ttk::style theme use]
+  variable type      [expr {[tk windowingsystem] eq "x11" ? "UTF8_STRING" : "STRING"}]
 }
 
 ################################################################################
 # PROCEDURES
 #
 proc replaceText {data} {
-    .text replace 0.0 end $data
+  .text replace 0.0 end $data
 }
 
 proc updateList {{text ""}} {
-    if [catch {set tClip::selected [clipboard get -type $tClip::type]}] {return}
-    if {$tClip::selected ni $tClip::cliplist} {
-        lappend tClip::cliplist $tClip::selected
-    }
-    if {$text eq "replace"} {replaceText $tClip::selected}
+  if [catch {set tClip::selected [clipboard get -type $tClip::type]}] {return}
+  if {$tClip::selected ni $tClip::cliplist} {
+    lappend tClip::cliplist $tClip::selected
+  }
+  if {$text eq "replace"} {replaceText $tClip::selected}
 }
 
 proc clipAppend {data {text ""}} {
-    clipboard clear
-    clipboard append -type STRING -- $data
-    if {$text eq "replace"} {replaceText $data}
-    updateList
+  clipboard clear
+  clipboard append -type STRING -- $data
+  if {$text eq "replace"} {replaceText $data}
+  updateList
 }
 
 proc undoRedo {text command} {
-    catch {$text edit $command}
+  catch {$text edit $command}
 }
 
 proc selectAll {text} {
-    $text tag add sel 0.0 end
+  $text tag add sel 0.0 end
 }
 
 proc helpAbout {} {
-    tk_messageBox \
-        -title "About tClip" -icon info -type ok \
-        -message "tClip" -detail \
+  tk_messageBox \
+    -title "About tClip" -icon info -type ok \
+    -message "tClip" -detail \
 {A simple clipboard manager,
 written in core Tcl/Tk.
 
@@ -58,108 +61,108 @@ Copyright (c) Thanos Zygouris
 # MAIN MENU
 #
 proc createMenu {} {
-    option add *tearOff false
-    . configure -menu [menu .menu]
-    .menu add cascade -label "Clipboard" -underline 0 -menu [menu .menu.clipboard]
-        .menu.clipboard add command -label "Read from Clipboard" -underline 0 \
-            -accelerator "Ctrl+R" -command {updateList replace}
-        .menu.clipboard add command -label "Add to Clipboard" -underline 0 -state disabled \
-            -accelerator "F3" -command {clipAppend [.text get 0.0 end-1char]}
-        .menu.clipboard add command -label "Clear Clipboard" -underline 0 \
-            -command {clipboard clear}
-        .menu.clipboard add separator
-        .menu.clipboard add command -label "Exit" -underline 1 \
-            -accelerator "Ctrl+Q" -command {exit}
-    .menu add cascade -label "Edit" -underline 0 -menu [menu .menu.edit]
-        .menu.edit add command -label "Undo" -underline 0 \
-            -accelerator "Ctrl+Z" -command {undoRedo .text undo}
-        .menu.edit add command -label "Redo" -underline 0 \
-            -accelerator "Ctrl+Shift+Z" -command {undoRedo .text redo}
-        .menu.edit add separator
-        .menu.edit add command -label "Cut" -underline 2 \
-            -accelerator "Ctrl+X" -command {tk_textCut .text}
-        .menu.edit add command -label "Copy" -underline 0 \
-            -accelerator "Ctrl+C" -command {tk_textCopy .text}
-        .menu.edit add command -label "Paste" -underline 0 \
-            -accelerator "Ctrl+V" -command {tk_textPaste .text}
-        .menu.edit add separator
-        .menu.edit add command -label "Select All" -underline 7 \
-            -accelerator "Ctrl+A" -command {selectAll .text}
-    .menu add cascade -label "Options" -underline 0 -menu [menu .menu.options]
-        .menu.options add checkbutton -label "On Top" -underline 1 \
-            -accelerator "F2" \
-            -variable tClip::on_top -onvalue "true" -offvalue "false" \
-            -command {wm attributes . -topmost $tClip::on_top}
-        .menu.options add separator
-        .menu.options add checkbutton -label "Word Wrap" -underline 5 \
-            -accelerator "Ctrl+W" \
-            -variable tClip::word_wrap -onvalue "word" -offvalue "none" \
-            -command {.text configure -wrap $tClip::word_wrap}
-        .menu.options add separator
-        .menu.options add cascade -label "Themes" -underline 0 -menu [menu .menu.options.themes]
-            foreach theme [ttk::style theme names] {
-                .menu.options.themes add radiobutton -label $theme \
-                    -variable tClip::theme -value $theme \
-                    -command [list ttk::style theme use $theme]
-            }
-    .menu add cascade -label "Help" -underline 0 -menu [menu .menu.help]
-        .menu.help add command -label "About tClip..." -underline 0 \
-            -accelerator "F1" -command {helpAbout}
+  option add *tearOff false
+  . configure -menu [menu .menu]
+  .menu add cascade -label "Clipboard" -underline 0 -menu [menu .menu.clipboard]
+    .menu.clipboard add command -label "Read from Clipboard" -underline 0 \
+      -accelerator "Ctrl+R" -command {updateList replace}
+    .menu.clipboard add command -label "Add to Clipboard" -underline 0 -state disabled \
+      -accelerator "F3" -command {clipAppend [.text get 0.0 end-1char]}
+    .menu.clipboard add command -label "Clear Clipboard" -underline 0 \
+      -command {clipboard clear}
+    .menu.clipboard add separator
+    .menu.clipboard add command -label "Exit" -underline 1 \
+      -accelerator "Ctrl+Q" -command {exit}
+  .menu add cascade -label "Edit" -underline 0 -menu [menu .menu.edit]
+    .menu.edit add command -label "Undo" -underline 0 \
+      -accelerator "Ctrl+Z" -command {undoRedo .text undo}
+    .menu.edit add command -label "Redo" -underline 0 \
+      -accelerator "Ctrl+Shift+Z" -command {undoRedo .text redo}
+    .menu.edit add separator
+    .menu.edit add command -label "Cut" -underline 2 \
+      -accelerator "Ctrl+X" -command {tk_textCut .text}
+    .menu.edit add command -label "Copy" -underline 0 \
+      -accelerator "Ctrl+C" -command {tk_textCopy .text}
+    .menu.edit add command -label "Paste" -underline 0 \
+      -accelerator "Ctrl+V" -command {tk_textPaste .text}
+    .menu.edit add separator
+    .menu.edit add command -label "Select All" -underline 7 \
+      -accelerator "Ctrl+A" -command {selectAll .text}
+  .menu add cascade -label "Options" -underline 0 -menu [menu .menu.options]
+    .menu.options add checkbutton -label "On Top" -underline 1 \
+      -accelerator "F2" \
+      -variable tClip::on_top -onvalue "true" -offvalue "false" \
+      -command {wm attributes . -topmost $tClip::on_top}
+    .menu.options add separator
+    .menu.options add checkbutton -label "Word Wrap" -underline 5 \
+      -accelerator "Ctrl+W" \
+      -variable tClip::word_wrap -onvalue "word" -offvalue "none" \
+      -command {.text configure -wrap $tClip::word_wrap}
+    .menu.options add separator
+    .menu.options add cascade -label "Themes" -underline 0 -menu [menu .menu.options.themes]
+      foreach theme [ttk::style theme names] {
+        .menu.options.themes add radiobutton -label $theme \
+          -variable tClip::theme -value $theme \
+          -command [list ttk::style theme use $theme]
+      }
+  .menu add cascade -label "Help" -underline 0 -menu [menu .menu.help]
+    .menu.help add command -label "About tClip..." -underline 0 \
+      -accelerator "F1" -command {helpAbout}
 }
 
 ################################################################################
 # WIDGETS
 #
 proc createWidgets {} {
-    ttk::combobox .combobox -textvariable tClip::selected \
-        -takefocus 0 -state readonly \
-        -values tClip::cliplist \
-        -postcommand {.combobox configure -values $tClip::cliplist}
-    tk::text .text -relief flat -highlightthickness 0 -takefocus 0 \
-        -wrap $tClip::word_wrap -undo true -autoseparators true \
-        -tabstyle wordprocessor \
-        -xscrollcommand {.xscroll set} \
-        -yscrollcommand {.yscroll set}
-    ttk::scrollbar .xscroll -orient horizontal -command {.text xview}
-    ttk::scrollbar .yscroll -orient vertical -command {.text yview}
-    ttk::sizegrip .sizegrip
+  ttk::combobox .combobox -textvariable tClip::selected \
+    -takefocus 0 -state readonly \
+    -values tClip::cliplist \
+    -postcommand {.combobox configure -values $tClip::cliplist}
+  tk::text .text -relief flat -highlightthickness 0 -takefocus 0 \
+    -wrap $tClip::word_wrap -undo true -autoseparators true \
+    -tabstyle wordprocessor \
+    -xscrollcommand {.xscroll set} \
+    -yscrollcommand {.yscroll set}
+  ttk::scrollbar .xscroll -orient horizontal -command {.text xview}
+  ttk::scrollbar .yscroll -orient vertical -command {.text yview}
+  ttk::sizegrip .sizegrip
 
-    grid .combobox -row 0 -column 0 -sticky we -columnspan 2
-    grid .text     -row 1 -column 0 -sticky news
-    grid .yscroll  -row 1 -column 1 -sticky ns
-    grid .xscroll  -row 2 -column 0 -sticky we
-    grid .sizegrip -row 2 -column 1
-    grid rowconfigure    . .text -weight 1
-    grid columnconfigure . .text -weight 1
+  grid .combobox -row 0 -column 0 -sticky we -columnspan 2
+  grid .text     -row 1 -column 0 -sticky news
+  grid .yscroll  -row 1 -column 1 -sticky ns
+  grid .xscroll  -row 2 -column 0 -sticky we
+  grid .sizegrip -row 2 -column 1
+  grid rowconfigure    . .text -weight 1
+  grid columnconfigure . .text -weight 1
 }
 
 ################################################################################
 # BINDINGS
 #
 proc createBindings {} {
-    set bindings [list \
-        <Control-a> \
-        <Control-z> \
-        <Control-Z>]
-    foreach keysym $bindings {
-        bind Text $keysym {return}
-    }
+  set bindings [list \
+    <Control-a> \
+    <Control-z> \
+    <Control-Z>]
+  foreach keysym $bindings {
+    bind Text $keysym {return}
+  }
 
-    bind . <Control-r> {.menu.clipboard invoke "Read from Clipboard"}
-    bind . <F3>        {.menu.clipboard invoke "Add to Clipboard"}
-    bind . <Control-q> {.menu.clipboard invoke "Exit"}
-    bind . <Control-z> {.menu.edit invoke "Undo"}
-    bind . <Control-Z> {.menu.edit invoke "Redo"}
-    bind . <Control-a> {.menu.edit invoke "Select All"}
-    bind . <F2>        {.menu.options invoke "On Top"}
-    bind . <F1>        {.menu.help invoke "About tClip..."}
+  bind . <Control-r> {.menu.clipboard invoke "Read from Clipboard"}
+  bind . <F3>        {.menu.clipboard invoke "Add to Clipboard"}
+  bind . <Control-q> {.menu.clipboard invoke "Exit"}
+  bind . <Control-z> {.menu.edit invoke "Undo"}
+  bind . <Control-Z> {.menu.edit invoke "Redo"}
+  bind . <Control-a> {.menu.edit invoke "Select All"}
+  bind . <F2>        {.menu.options invoke "On Top"}
+  bind . <F1>        {.menu.help invoke "About tClip..."}
 
-    bind .text <<Modified>> {
-        .menu.clipboard entryconfigure "Add to Clipboard" -state normal
-    }
-    bind .text <3> {focus %W; tk_popup .menu.edit %X %Y}
+  bind .text <<Modified>> {
+    .menu.clipboard entryconfigure "Add to Clipboard" -state normal
+  }
+  bind .text <3> {focus %W; tk_popup .menu.edit %X %Y}
 
-    bind .combobox <<ComboboxSelected>> {clipAppend $tClip::selected replace}
+  bind .combobox <<ComboboxSelected>> {clipAppend $tClip::selected replace}
 }
 
 ################################################################################
@@ -181,5 +184,5 @@ wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
 # COMMAND LINE
 #
 if {$::argc > 0} {
-    clipAppend [lindex $::argv end] replace
+  clipAppend [lindex $::argv end] replace
 }
