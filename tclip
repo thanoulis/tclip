@@ -8,51 +8,46 @@ package require Tk
 namespace eval tClip {
   variable on_top    false
   variable word_wrap none
-  variable selected  {}
-  variable cliplist  [list]
+  variable clip      {}
+  variable clip_list [list]
   variable theme     [ttk::style theme use]
-  variable type      [expr {[tk windowingsystem] eq "x11" ? "UTF8_STRING" : "STRING"}]
+  variable type [expr {[tk windowingsystem] eq "x11" ? "UTF8_STRING" : "STRING"}]
 }
 
 ################################################################################
 # PROCEDURES
 #
-proc replaceText {data} {
-  .text replace 0.0 end $data
-}
-
-proc updateList {{text ""}} {
-  if [catch {set tClip::selected [clipboard get -type $tClip::type]}] {return}
-  if {$tClip::selected ni $tClip::cliplist} {
-    lappend tClip::cliplist $tClip::selected
+proc readFromClipboard {widget} {
+  if [catch {set tClip::clip [clipboard get -type $tClip::type]}] {return}
+  # do not update combobox list if already there
+  if {$tClip::clip ni $tClip::clip_list} {
+    lappend tClip::clip_list $tClip::clip
   }
-  if {$text eq "replace"} {replaceText $tClip::selected}
+  $widget replace 0.0 end $tClip::clip
 }
 
-proc clipAppend {data {text ""}} {
+proc addToClipboard {widget data} {
   clipboard clear
   clipboard append -type STRING -- $data
-  if {$text eq "replace"} {replaceText $data}
-  updateList
+  readFromClipboard $widget
 }
 
-proc clearClipboard {text} {
+proc clearClipboard {widget} {
   clipboard clear
-  $text delete 0.0 end
+  $widget delete 0.0 end
 }
 
-proc undoRedo {text command} {
-  catch {$text edit $command}
+proc undoRedo {widget command} {
+  catch {$widget edit $command}
 }
 
-proc selectAll {text} {
-  if {[$text get 0.0 end-1char] eq ""} {return 1}
-  $text tag add sel 0.0 end-1char
+proc selectAll {widget} {
+  if {[$widget get 0.0 end-1char] eq ""} {return 1}
+  $widget tag add sel 0.0 end-1char
 }
 
 proc helpAbout {} {
-  tk_messageBox \
-    -title "About tClip" -icon info -type ok \
+  tk_messageBox -title "About tClip" -icon info -type ok -parent . \
     -message "tClip" -detail \
 {A simple clipboard manager,
 written in core Tcl/Tk.
@@ -71,9 +66,10 @@ proc createMenu {} {
   . configure -menu [menu .menu]
   .menu add cascade -label "Clipboard" -underline 0 -menu [menu .menu.clipboard]
     .menu.clipboard add command -label "Read from Clipboard" -underline 0 \
-      -accelerator "Ctrl+R" -command {updateList replace}
-    .menu.clipboard add command -label "Add to Clipboard" -underline 0 -state disabled \
-      -accelerator "F3" -command {clipAppend [.text get 0.0 end-1char]}
+      -accelerator "Ctrl+R" -command {readFromClipboard .text}
+    .menu.clipboard add command -label "Add to Clipboard" -underline 0 \
+      -state disabled -accelerator "F3" \
+      -command {addToClipboard .text [.text get 0.0 end-1char]}
     .menu.clipboard add command -label "Clear Clipboard" -underline 0 \
       -accelerator "Ctrl+L" -command {clearClipboard .text}
     .menu.clipboard add separator
@@ -105,7 +101,8 @@ proc createMenu {} {
       -variable tClip::word_wrap -onvalue "word" -offvalue "none" \
       -command {.text configure -wrap $tClip::word_wrap}
     .menu.options add separator
-    .menu.options add cascade -label "Themes" -underline 0 -menu [menu .menu.options.themes]
+    .menu.options add cascade -label "Themes" -underline 0 \
+      -menu [menu .menu.options.themes]
       foreach theme [ttk::style theme names] {
         .menu.options.themes add radiobutton -label $theme \
           -variable tClip::theme -value $theme \
@@ -120,17 +117,16 @@ proc createMenu {} {
 # WIDGETS
 #
 proc createWidgets {} {
-  ttk::combobox .combobox -textvariable tClip::selected \
+  ttk::combobox .combobox -textvariable tClip::clip \
     -takefocus 0 -state readonly -exportselection true \
-    -values tClip::cliplist \
-    -postcommand {.combobox configure -values $tClip::cliplist}
+    -values tClip::clip_list \
+    -postcommand {.combobox configure -values $tClip::clip_list}
   tk::text .text -relief flat -highlightthickness 0 -takefocus 0 \
     -wrap $tClip::word_wrap -undo true -autoseparators true \
     -tabstyle wordprocessor \
-    -xscrollcommand {.xscroll set} \
-    -yscrollcommand {.yscroll set}
+    -yscrollcommand {.yscroll set} -xscrollcommand {.xscroll set}
+  ttk::scrollbar .yscroll -orient vertical   -command {.text yview}
   ttk::scrollbar .xscroll -orient horizontal -command {.text xview}
-  ttk::scrollbar .yscroll -orient vertical -command {.text yview}
   ttk::sizegrip .sizegrip
 
   grid .combobox -row 0 -column 0 -sticky we -columnspan 2
@@ -179,7 +175,7 @@ proc createBindings {} {
   }
   bind .text <3> {focus %W; tk_popup .menu.edit %X %Y}
 
-  bind .combobox <<ComboboxSelected>> {clipAppend $tClip::selected replace}
+  bind .combobox <<ComboboxSelected>> {addToClipboard .text $tClip::clip}
 }
 
 ################################################################################
@@ -191,7 +187,7 @@ createBindings
 focus .text
 
 # check clipboard on program start
-updateList replace
+readFromClipboard .text
 
 wm title    . "tClip"
 wm minsize  . 220 100
@@ -201,5 +197,5 @@ wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
 # COMMAND LINE
 #
 if {$::argc > 0} {
-  clipAppend [lindex $::argv end] replace
+  addToClipboard .text $::argv
 }
