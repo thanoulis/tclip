@@ -8,7 +8,7 @@ package require Tk
 namespace eval tClip {
   variable on_top    false
   variable word_wrap none
-  variable selected  ""
+  variable selected  {}
   variable cliplist  [list]
   variable theme     [ttk::style theme use]
   variable type      [expr {[tk windowingsystem] eq "x11" ? "UTF8_STRING" : "STRING"}]
@@ -36,12 +36,18 @@ proc clipAppend {data {text ""}} {
   updateList
 }
 
+proc clearClipboard {text} {
+  clipboard clear
+  $text delete 0.0 end
+}
+
 proc undoRedo {text command} {
   catch {$text edit $command}
 }
 
 proc selectAll {text} {
-  $text tag add sel 0.0 end
+  if {[$text get 0.0 end-1char] eq ""} {return 1}
+  $text tag add sel 0.0 end-1char
 }
 
 proc helpAbout {} {
@@ -69,7 +75,7 @@ proc createMenu {} {
     .menu.clipboard add command -label "Add to Clipboard" -underline 0 -state disabled \
       -accelerator "F3" -command {clipAppend [.text get 0.0 end-1char]}
     .menu.clipboard add command -label "Clear Clipboard" -underline 0 \
-      -command {clipboard clear}
+      -accelerator "Ctrl+L" -command {clearClipboard .text}
     .menu.clipboard add separator
     .menu.clipboard add command -label "Exit" -underline 1 \
       -accelerator "Ctrl+Q" -command {exit}
@@ -89,7 +95,7 @@ proc createMenu {} {
     .menu.edit add command -label "Select All" -underline 7 \
       -accelerator "Ctrl+A" -command {selectAll .text}
   .menu add cascade -label "Options" -underline 0 -menu [menu .menu.options]
-    .menu.options add checkbutton -label "On Top" -underline 1 \
+    .menu.options add checkbutton -label "On Top" -underline 0 \
       -accelerator "F2" \
       -variable tClip::on_top -onvalue "true" -offvalue "false" \
       -command {wm attributes . -topmost $tClip::on_top}
@@ -115,7 +121,7 @@ proc createMenu {} {
 #
 proc createWidgets {} {
   ttk::combobox .combobox -textvariable tClip::selected \
-    -takefocus 0 -state readonly \
+    -takefocus 0 -state readonly -exportselection true \
     -values tClip::cliplist \
     -postcommand {.combobox configure -values $tClip::cliplist}
   tk::text .text -relief flat -highlightthickness 0 -takefocus 0 \
@@ -141,20 +147,31 @@ proc createWidgets {} {
 #
 proc createBindings {} {
   set bindings [list \
-    <Control-a> \
-    <Control-z> \
-    <Control-Z>]
+    <Control-r> <Control-R> \
+    <Control-l> <Control-L> \
+    <Control-q> <Control-Q> \
+    <Control-z> <Control-Z> \
+    <Control-a> <Control-A> \
+    <Control-w> <Control-W> \
+  ]
   foreach keysym $bindings {
     bind Text $keysym {return}
   }
 
   bind . <Control-r> {.menu.clipboard invoke "Read from Clipboard"}
+  bind . <Control-R> {.menu.clipboard invoke "Read from Clipboard"}
   bind . <F3>        {.menu.clipboard invoke "Add to Clipboard"}
+  bind . <Control-l> {.menu.clipboard invoke "Clear Clipboard"}
+  bind . <Control-L> {.menu.clipboard invoke "Clear Clipboard"}
   bind . <Control-q> {.menu.clipboard invoke "Exit"}
+  bind . <Control-Q> {.menu.clipboard invoke "Exit"}
   bind . <Control-z> {.menu.edit invoke "Undo"}
   bind . <Control-Z> {.menu.edit invoke "Redo"}
   bind . <Control-a> {.menu.edit invoke "Select All"}
+  bind . <Control-A> {.menu.edit invoke "Select All"}
   bind . <F2>        {.menu.options invoke "On Top"}
+  bind . <Control-w> {.menu.options invoke "Word Wrap"}
+  bind . <Control-W> {.menu.options invoke "Word Wrap"}
   bind . <F1>        {.menu.help invoke "About tClip..."}
 
   bind .text <<Modified>> {
@@ -177,7 +194,7 @@ focus .text
 updateList replace
 
 wm title    . "tClip"
-wm minsize  . 300 150
+wm minsize  . 220 100
 wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
 
 ################################################################################
