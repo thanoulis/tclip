@@ -1,4 +1,4 @@
-#!/usr/bin/env wish
+#!/usr/bin/env tclsh
 
 package require Tk
 
@@ -10,6 +10,7 @@ namespace eval tClip {
   variable word_wrap none
   variable clip      {}
   variable clip_list [list]
+  variable msg       {}
   variable theme     [ttk::style theme use]
   variable type [expr {[tk windowingsystem] eq "x11" ? "UTF8_STRING" : "STRING"}]
 }
@@ -18,7 +19,7 @@ namespace eval tClip {
 # PROCEDURES
 #
 proc readFromClipboard {widget} {
-  if [catch {set tClip::clip [clipboard get -type $tClip::type]}] {return}
+  if [catch {set tClip::clip [clipboard get -type $tClip::type]}] {return 1}
   # do not update combobox list if already there
   if {$tClip::clip ni $tClip::clip_list} {
     lappend tClip::clip_list $tClip::clip
@@ -27,6 +28,7 @@ proc readFromClipboard {widget} {
 }
 
 proc addToClipboard {widget data} {
+  if {$data eq ""} {return 1}
   clipboard clear
   clipboard append -type STRING -- $data
   readFromClipboard $widget
@@ -117,25 +119,41 @@ proc createMenu {} {
 # WIDGETS
 #
 proc createWidgets {} {
-  ttk::combobox .combobox -textvariable tClip::clip \
-    -takefocus 0 -state readonly -exportselection true \
-    -values tClip::clip_list \
-    -postcommand {.combobox configure -values $tClip::clip_list}
-  tk::text .text -relief flat -highlightthickness 0 -takefocus 0 \
-    -wrap $tClip::word_wrap -undo true -autoseparators true \
-    -tabstyle wordprocessor \
-    -yscrollcommand {.yscroll set} -xscrollcommand {.xscroll set}
-  ttk::scrollbar .yscroll -orient vertical   -command {.text yview}
-  ttk::scrollbar .xscroll -orient horizontal -command {.text xview}
-  ttk::sizegrip .sizegrip
+  ttk::style configure flat.TLabelframe -relief flat
 
-  grid .combobox -row 0 -column 0 -sticky we -columnspan 2
-  grid .text     -row 1 -column 0 -sticky news
-  grid .yscroll  -row 1 -column 1 -sticky ns
-  grid .xscroll  -row 2 -column 0 -sticky we
-  grid .sizegrip -row 2 -column 1
-  grid rowconfigure    . .text -weight 1
-  grid columnconfigure . .text -weight 1
+  ttk::labelframe .lf_clip -text "\u2022Clipboard History:" -style flat.TLabelframe
+    ttk::combobox .cb_clip -textvariable tClip::clip \
+      -takefocus 0 -state readonly -exportselection true \
+      -values tClip::clip_list \
+      -postcommand {.cb_clip configure -values $tClip::clip_list}
+    grid .cb_clip -in .lf_clip -row 0 -column 0 -sticky we
+    grid columnconfigure .lf_clip .cb_clip -weight 1
+
+  ttk::labelframe .lf_text -text "\u2022Details:" -style flat.TLabelframe
+    tk::text .text -relief sunken -highlightthickness 0 -takefocus 0 \
+      -wrap $tClip::word_wrap -undo true -autoseparators true \
+      -tabstyle wordprocessor -blockcursor true \
+      -xscrollcommand {.xscroll set} -yscrollcommand {.yscroll set}
+    ttk::scrollbar .yscroll -orient vertical   -command {.text yview}
+    ttk::scrollbar .xscroll -orient horizontal -command {.text xview}
+    grid .text    -in .lf_text -row 0 -column 0 -sticky nswe
+    grid .yscroll -in .lf_text -row 0 -column 1 -sticky ns
+    grid .xscroll -in .lf_text -row 1 -column 0 -sticky we
+    grid rowconfigure    .lf_text .text -weight 1
+    grid columnconfigure .lf_text .text -weight 1
+
+  ttk::frame .statusbar -borderwidth 1 -relief sunken
+    ttk::label .message -textvariable tClip::msg
+    ttk::sizegrip .sizegrip
+    grid .message  -in .statusbar -row 0 -column 0 -sticky we
+    grid .sizegrip -in .statusbar -row 0 -column 1 -sticky e
+    grid columnconfigure .statusbar .message -weight 1
+
+  grid .lf_clip   -row 0 -column 0 -sticky we
+  grid .lf_text   -row 1 -column 0 -sticky news
+  grid .statusbar -row 2 -column 0 -sticky we
+  grid rowconfigure    . .lf_text -weight 1
+  grid columnconfigure . .lf_text -weight 1
 }
 
 ################################################################################
@@ -143,31 +161,27 @@ proc createWidgets {} {
 #
 proc createBindings {} {
   set bindings [list \
-    <Control-r> <Control-R> \
-    <Control-l> <Control-L> \
-    <Control-q> <Control-Q> \
-    <Control-z> <Control-Z> \
-    <Control-a> <Control-A> \
-    <Control-w> <Control-W> \
+    <Control-r> \
+    <Control-l> \
+    <Control-q> \
+    <Control-z> \
+    <Control-Z> \
+    <Control-a> \
+    <Control-w> \
   ]
   foreach keysym $bindings {
-    bind Text $keysym {return}
+    bind Text $keysym {return 0}
   }
 
   bind . <Control-r> {.menu.clipboard invoke "Read from Clipboard"}
-  bind . <Control-R> {.menu.clipboard invoke "Read from Clipboard"}
   bind . <F3>        {.menu.clipboard invoke "Add to Clipboard"}
   bind . <Control-l> {.menu.clipboard invoke "Clear Clipboard"}
-  bind . <Control-L> {.menu.clipboard invoke "Clear Clipboard"}
   bind . <Control-q> {.menu.clipboard invoke "Exit"}
-  bind . <Control-Q> {.menu.clipboard invoke "Exit"}
   bind . <Control-z> {.menu.edit invoke "Undo"}
   bind . <Control-Z> {.menu.edit invoke "Redo"}
   bind . <Control-a> {.menu.edit invoke "Select All"}
-  bind . <Control-A> {.menu.edit invoke "Select All"}
   bind . <F2>        {.menu.options invoke "On Top"}
   bind . <Control-w> {.menu.options invoke "Word Wrap"}
-  bind . <Control-W> {.menu.options invoke "Word Wrap"}
   bind . <F1>        {.menu.help invoke "About tClip..."}
 
   bind .text <<Modified>> {
@@ -175,7 +189,7 @@ proc createBindings {} {
   }
   bind .text <3> {focus %W; tk_popup .menu.edit %X %Y}
 
-  bind .combobox <<ComboboxSelected>> {addToClipboard .text $tClip::clip}
+  bind .cb_clip <<ComboboxSelected>> {addToClipboard .text $tClip::clip}
 }
 
 ################################################################################
@@ -190,7 +204,7 @@ focus .text
 readFromClipboard .text
 
 wm title    . "tClip"
-wm minsize  . 220 100
+wm minsize  . 300 250
 wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
 
 ################################################################################
