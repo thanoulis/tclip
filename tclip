@@ -121,7 +121,7 @@ proc createMenu {} {
 proc createWidgets {} {
   ttk::style configure flat.TLabelframe -relief flat
 
-  ttk::labelframe .lf_clip -text "\u2022Clipboard History:" -style flat.TLabelframe
+  ttk::labelframe .lf_clip -text "\u2022 Saved Clips:" -style flat.TLabelframe
     ttk::combobox .cb_clip -textvariable tClip::clip \
       -takefocus 0 -state readonly -exportselection true \
       -values tClip::clip_list \
@@ -129,7 +129,7 @@ proc createWidgets {} {
     grid .cb_clip -in .lf_clip -row 0 -column 0 -sticky we
     grid columnconfigure .lf_clip .cb_clip -weight 1
 
-  ttk::labelframe .lf_text -text "\u2022Details:" -style flat.TLabelframe
+  ttk::labelframe .lf_text -text "\u2022 Details:" -style flat.TLabelframe
     tk::text .text -relief sunken -highlightthickness 0 -takefocus 0 \
       -wrap $tClip::word_wrap -undo true -autoseparators true \
       -tabstyle wordprocessor -blockcursor true \
