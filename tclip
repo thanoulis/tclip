@@ -19,7 +19,7 @@ namespace eval tClip {
 # PROCEDURES
 #
 proc readFromClipboard {widget} {
-  if [catch {set tClip::clip [clipboard get -type $tClip::type]}] {return 1}
+  if {[catch {set tClip::clip [clipboard get -type $tClip::type]}]} {return 1}
   # do not update combobox list if already there
   if {$tClip::clip ni $tClip::clip_list} {
     lappend tClip::clip_list $tClip::clip
