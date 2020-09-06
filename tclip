@@ -50,6 +50,7 @@ proc selectAll {widget} {
 }
 
 proc getPipedData {} {
+  set data ""
   while {[gets stdin line] >= 0} {
     append data $line "\n"
   }
@@ -222,7 +223,7 @@ wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
 # COMMAND LINE
 #
 if {$::argc > 0} {
-  addToClipboard .text [join $argv]
+  addToClipboard .text [join $::argv]
 }
 
 # get input from OS pipe (stdout)
