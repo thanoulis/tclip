@@ -225,7 +225,7 @@ wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
 # COMMAND LINE
 #
 if {$::argc > 0} {
-  addToClipboard .text [join $::argv]
+  addToClipboard .text [join $::argv "\n"]
 }
 # get input from OS pipe (stdout)
 chan event stdin readable {getPipedData}
