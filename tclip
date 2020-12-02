@@ -49,6 +49,18 @@ proc selectAll {widget} {
   $widget tag add sel 0.0 "end -1 indices"
 }
 
+proc textModified {text} {
+  .menu.clipboard entryconfigure "Add to Clipboard" \
+    -state [expr {[$text edit modified] ? "normal" : "disabled"}]
+}
+
+proc undoStack {text} {
+  foreach {item action} {Undo canundo Redo canredo} {
+    .menu.edit entryconfigure $item \
+      -state [expr {[$text edit $action] ? "normal" : "disabled"}]
+  }
+}
+
 proc getPipedData {} {
   set data ""
   while {[gets stdin line] >= 0} {
@@ -198,9 +210,8 @@ proc createBindings {} {
   bind all <Control-w> {.menu.options invoke "Word Wrap"}
   bind all <F1>        {.menu.help invoke "About tClip..."}
 
-  bind Text <<Modified>> {
-    .menu.clipboard entryconfigure "Add to Clipboard" -state normal
-  }
+  bind Text <<Modified>>  {textModified %W}
+  bind Text <<UndoStack>> {undoStack %W}
   bind Text <ButtonPress-3> {focus %W; tk_popup .menu.edit %X %Y}
 
   bind TCombobox <<ComboboxSelected>> {addToClipboard .text $tClip::clip}
@@ -213,7 +224,8 @@ createMenu
 createWidgets
 createBindings
 focus .text
-
+# initialize undo/redo menu items
+undoStack .text
 # check clipboard on program start
 readFromClipboard .text
 
