@@ -21,7 +21,7 @@
 
 ----
 
-### DEPENDENCIES
+### Dependencies
 
 **Tcl** version 8.6 or later.
 
@@ -33,7 +33,7 @@
 
 ----
 
-### LICENSE
+### License
 
 **tEdit** is licensed under the **MIT License**.
 
