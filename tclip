@@ -55,8 +55,8 @@ proc getPipedData {} {
     append data $line "\n"
   }
   chan event stdin readable {}
-  set data [string trimright $data "\n"]
-  if {[llength $data] > 0} {
+  set data [string range $data 0 end-1]
+  if {[string length $data] > 0} {
     addToClipboard .text $data
   }
 }
