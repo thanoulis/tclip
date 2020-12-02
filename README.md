@@ -7,15 +7,10 @@
 ### Features
 
 * On Top
-
 * Tk Themes
-
 * Editable Text
-
 * Add custom Clips
-
 * Command Line Support
-
 * Runs in GNU/Linux, MS-Windows and Unix (MacOS not tested)
 
 ----
