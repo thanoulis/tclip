@@ -31,6 +31,10 @@
 
 [ActiveTcl](https://www.activestate.com/activetcl) version 8.6 or later.
 
+Executable can be found in the [Releases](https://github.com/thanoulis/tclip/releases) section.
+
+To run it, after download, right-click->Properties->Unblock.
+
 ----
 
 ### License
