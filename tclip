@@ -35,12 +35,13 @@ proc tClip::Read {text} {
   $text delete 0.0 end
   $text insert end $tClip::clip
   set new [$text get 0.0 "end -1 indices"]
-  if {$old eq $new} {
+  # in user input keep cursor in place
+  if {[string equal $old $new] == 1} {
     $text mark set insert $oldi
-    return
+  } else {
+    $text mark set insert 0.0
+    $text see insert
   }
-  $text mark set insert 0.0
-  $text see insert
   focus $text
 }
 
@@ -156,9 +157,8 @@ proc tClip::Menu {} {
 # WIDGETS
 #
 proc tClip::Widgets {} {
-  ttk::style configure flat.TLabelframe -relief flat
 
-  ttk::labelframe .lf_clip -text "\u2022 Saved Clips:" -style flat.TLabelframe
+  ttk::labelframe .lf_clip -relief flat -text "\u2022 Saved Clips:"
     ttk::combobox .cb_clip -textvariable tClip::clip \
       -takefocus 0 -state readonly -exportselection true \
       -values $tClip::hclip \
@@ -166,7 +166,7 @@ proc tClip::Widgets {} {
     grid .cb_clip -in .lf_clip -row 0 -column 0 -sticky we
     grid columnconfigure .lf_clip .cb_clip -weight 1
 
-  ttk::labelframe .lf_text -text "\u2022 Details:" -style flat.TLabelframe
+  ttk::labelframe .lf_text -relief flat -text "\u2022 Details:"
     tk::text .text -relief sunken -highlightthickness 0 -takefocus 0 \
       -wrap $tClip::wrap -undo true -autoseparators true \
       -tabstyle wordprocessor -insertofftime 0 \
@@ -221,7 +221,10 @@ proc tClip::Bindings {} {
   bind Text <<UndoStack>>   {tClip::UndoStack %W}
   bind Text <ButtonPress-3> {tk_popup .menu.edit %X %Y}
 
-  bind TCombobox <<ComboboxSelected>> {tClip::Add .text $tClip::clip}
+  bind TCombobox <<ComboboxSelected>> {
+    tClip::Add .text $tClip::clip
+    %W selection clear
+  }
 }
 
 ################################################################################
