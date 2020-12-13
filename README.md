@@ -11,6 +11,7 @@
 * Editable Text
 * Add custom Clips
 * Command Line Support
+* Auto/Manual Read Clipboard
 * Runs in GNU/Linux, MS-Windows and Unix (MacOS not tested)
 
 ----
