@@ -7,6 +7,7 @@ package require Tk
 #
 namespace eval tClip {
   variable version {0.4.3}
+  variable auto    {false}
   variable ontop   {false}
   variable wrap    {none}
   variable clip    {}
@@ -23,12 +24,22 @@ proc tClip::Message {msg} {
   set tClip::msg "[string bytelength $msg] bytes"
 }
 
-proc tClip::Read {text} {
-  if {[catch {set tClip::clip [clipboard get -type $tClip::type]}]} {return 1}
-  # do not update combobox list if already there
-  if {$tClip::clip ni $tClip::hclip} {
-    lappend tClip::hclip $tClip::clip
+proc tClip::Read {} {
+  if {![catch {set tClip::clip [clipboard get -type $tClip::type]}]} {
+    # do not update combobox list if already there
+    if {$tClip::clip ni $tClip::hclip} {
+      lappend tClip::hclip $tClip::clip
+    }
   }
+  # cancel any rogue previous timers
+  after cancel {tClip::Read}
+  if {$tClip::auto eq "true"} {
+    after 1000 {tClip::Read}
+  }
+}
+
+proc tClip::Update {text} {
+  tClip::Read
   tClip::Message $tClip::clip
   set old [$text get 0.0 "end -1 indices"]
   set oldi [$text index insert]
@@ -49,7 +60,7 @@ proc tClip::Add {text data} {
   if {$data eq ""} {return 1}
   clipboard clear
   clipboard append -type STRING -- $data
-  tClip::Read $text
+  tClip::Update $text
 }
 
 proc tClip::Clear {text} {
@@ -106,7 +117,7 @@ proc tClip::Menu {} {
   . configure -menu [menu .menu]
   .menu add cascade -label "Clipboard" -underline 0 -menu [menu .menu.clipboard]
     .menu.clipboard add command -label "Read from Clipboard" -underline 0 \
-      -accelerator "Ctrl+R" -command {tClip::Read .text}
+      -accelerator "Ctrl+R" -command {tClip::Update .text}
     .menu.clipboard add command -label "Add to Clipboard" -underline 0 \
       -state disabled -accelerator "F3" \
       -command {tClip::Add .text [.text get 0.0 "end -1 indices"]}
@@ -148,6 +159,10 @@ proc tClip::Menu {} {
           -variable tClip::theme -value $theme \
           -command [list ttk::style theme use $theme]
       }
+    .menu.options add separator
+    .menu.options add checkbutton -label "Auto Update" -underline 5 \
+      -variable tClip::auto -onvalue "true" -offvalue "false" \
+      -command {tClip::Read}
   .menu add cascade -label "Help" -underline 0 -menu [menu .menu.help]
     .menu.help add command -label "About tClip..." -underline 0 \
       -accelerator "F1" -command {tClip::About $tClip::version}
@@ -237,10 +252,10 @@ focus .text
 # initialize undo/redo menu items
 tClip::UndoStack .text
 # check clipboard on program start
-tClip::Read .text
+tClip::Update .text
 
 wm title    . "tClip"
-wm minsize  . 300 250
+wm minsize  . 230 230
 wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
 
 ################################################################################
