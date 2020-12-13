@@ -6,7 +6,7 @@ package require Tk
 # VARIABLES
 #
 namespace eval tClip {
-  variable version {0.4.3}
+  variable version {0.4.4}
   variable auto    {false}
   variable ontop   {false}
   variable wrap    {none}
