@@ -11,8 +11,8 @@
 * Editable Text
 * Add custom Clips
 * Command Line Support
-* Auto/Manual Read Clipboard
-* Runs in GNU/Linux, MS-Windows and Unix (MacOS not tested)
+* Auto or Manual read from Clipboard
+* Runs in GNU/Linux, [Microsoft Windows](#for-microsoft-windows-users) and Unix (MacOS not tested)
 
 ----
 
@@ -32,7 +32,7 @@
 
 [ActiveTcl](https://www.activestate.com/activetcl) version 8.6 or later.
 
-Executable can be found in the [Releases](https://github.com/thanoulis/tclip/releases) section.
+For executables go to [Releases](https://github.com/thanoulis/tclip/releases) section, or download the [latest](https://github.com/thanoulis/tclip/releases/latest/download/tclip.exe).
 
 To run it, after download, right-click->Properties->Unblock.
 
