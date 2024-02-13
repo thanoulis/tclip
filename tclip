@@ -7,7 +7,7 @@ package require Tk
 #
 namespace eval tClip {
   variable version {0.4.4}
-  variable auto    {false}
+  variable auto    {true}
   variable ontop   {false}
   variable wrap    {none}
   variable clip    {}
@@ -172,7 +172,6 @@ proc tClip::Menu {} {
 # WIDGETS
 #
 proc tClip::Widgets {} {
-
   ttk::labelframe .lf_clip -relief flat -text "\u2022 Saved Clips:"
     ttk::combobox .cb_clip -textvariable tClip::clip \
       -takefocus 0 -state readonly -exportselection true \
