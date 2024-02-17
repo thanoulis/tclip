@@ -6,49 +6,65 @@ package require Tk
 # VARIABLES
 #
 namespace eval tClip {
-  variable version {0.4.4}
-  variable auto    {true}
-  variable ontop   {false}
-  variable wrap    {none}
-  variable clip    {}
-  variable hclip   [list]
-  variable msg     {}
-  variable theme   [ttk::style theme use]
-  variable type    [expr {[tk windowingsystem] eq "x11" ? "UTF8_STRING" : "STRING"}]
+  variable version  {0.4.5}
+  variable auto     {true}
+  variable ontop    {false}
+  variable wrap     {none}
+  variable clip     {}
+  variable hclip    [list]
+  variable clips    {0 clips}
+  variable words    {0 words}
+  variable bytes    {0 bytes}
+  variable encoding [encoding system]
+  variable theme    [ttk::style theme use]
+  variable type     [expr {[tk windowingsystem] eq "x11" ? "UTF8_STRING" : "STRING"}]
 }
 
 ################################################################################
 # PROCEDURES
 #
 proc tClip::Message {msg} {
-  set tClip::msg "[string bytelength $msg] bytes"
+  set words 0
+  foreach word [regexp -all -inline {[[:alnum:]]+} $msg] {
+    incr words
+  }
+  set tClip::clips [list [set clips [llength $tClip::hclip]] \
+    [expr {$clips eq 1 ? "clip" : "clips"}]]
+  set tClip::words [list $words [expr {$words eq 1 ? "word" : "words"}]]
+  set tClip::bytes [list [set bytes [string length [encoding convertto utf-8 $msg]]] \
+    [expr {$bytes eq 1 ? "byte" : "bytes"}]]
 }
 
 proc tClip::Read {} {
-  if {![catch {set tClip::clip [clipboard get -type $tClip::type]}]} {
-    # do not update combobox list if already there
+  try {
+    set tClip::clip [clipboard get -type $tClip::type]
+  } on error msg {
+    # do nothing
+  } on ok msg {
+    # update combobox list if not listed already
     if {$tClip::clip ni $tClip::hclip} {
       lappend tClip::hclip $tClip::clip
     }
-  }
-  # cancel any rogue previous timers
-  after cancel {tClip::Read}
-  if {$tClip::auto eq "true"} {
-    after 1000 {tClip::Read}
+    tClip::Message $tClip::clip
+  } finally {
+    # cancel any rogue previous timers
+    after cancel {tClip::Read}
+    if {$tClip::auto eq "true"} {
+      after 1000 {tClip::Read}
+    }
   }
 }
 
-proc tClip::Update {text} {
+proc tClip::Update {{text ".text"}} {
   tClip::Read
-  tClip::Message $tClip::clip
   set old [$text get 0.0 "end -1 indices"]
-  set oldi [$text index insert]
+  set oldcursor [$text index insert]
   $text delete 0.0 end
   $text insert end $tClip::clip
   set new [$text get 0.0 "end -1 indices"]
   # in user input keep cursor in place
   if {[string equal $old $new] == 1} {
-    $text mark set insert $oldi
+    $text mark set insert $oldcursor
   } else {
     $text mark set insert 0.0
     $text see insert
@@ -56,36 +72,36 @@ proc tClip::Update {text} {
   focus $text
 }
 
-proc tClip::Add {text data} {
+proc tClip::Add {data} {
   if {$data eq ""} {return 1}
   clipboard clear
   clipboard append -type STRING -- $data
-  tClip::Update $text
+  tClip::Update
 }
 
-proc tClip::Clear {text} {
+proc tClip::Clear {{text ".text"}} {
   clipboard clear
   $text delete 0.0 end
 }
 
-proc tClip::SelectAll {text} {
+proc tClip::SelectAll {{text ".text"}} {
   if {[$text get 0.0 "end -1 indices"] eq ""} {return 1}
   $text tag add sel 0.0 "end -1 indices"
 }
 
-proc tClip::Modified {text} {
+proc tClip::Modified {{text ".text"}} {
   .menu.clipboard entryconfigure "Add to Clipboard" \
     -state [expr {[$text edit modified] ? "normal" : "disabled"}]
 }
 
-proc tClip::UndoStack {text} {
+proc tClip::UndoStack {{text ".text"}} {
   foreach {item action} {Undo canundo Redo canredo} {
     .menu.edit entryconfigure $item \
       -state [expr {[$text edit $action] ? "normal" : "disabled"}]
   }
 }
 
-proc tClip::Pipe {text} {
+proc tClip::Pipe {} {
   chan event stdin readable {}
   set data ""
   while {[chan gets stdin line] >= 0} {
@@ -93,7 +109,7 @@ proc tClip::Pipe {text} {
   }
   set data [string range $data 0 end-1]
   if {[string length $data] > 0} {
-    tClip::Add $text $data
+    tClip::Add $data
   }
 }
 
@@ -117,12 +133,12 @@ proc tClip::Menu {} {
   . configure -menu [menu .menu]
   .menu add cascade -label "Clipboard" -underline 0 -menu [menu .menu.clipboard]
     .menu.clipboard add command -label "Read from Clipboard" -underline 0 \
-      -accelerator "Ctrl+R" -command {tClip::Update .text}
+      -accelerator "Ctrl+R" -command {tClip::Update}
     .menu.clipboard add command -label "Add to Clipboard" -underline 0 \
       -state disabled -accelerator "F3" \
-      -command {tClip::Add .text [.text get 0.0 "end -1 indices"]}
+      -command {tClip::Add [.text get 0.0 "end -1 indices"]}
     .menu.clipboard add command -label "Clear Clipboard" -underline 0 \
-      -accelerator "Ctrl+L" -command {tClip::Clear .text}
+      -accelerator "Ctrl+L" -command {tClip::Clear}
     .menu.clipboard add separator
     .menu.clipboard add command -label "Exit" -underline 1 \
       -accelerator "Ctrl+Q" -command {exit}
@@ -140,7 +156,7 @@ proc tClip::Menu {} {
       -accelerator "Ctrl+V" -command {tk_textPaste .text}
     .menu.edit add separator
     .menu.edit add command -label "Select All" -underline 7 \
-      -accelerator "Ctrl+A" -command {tClip::SelectAll .text}
+      -accelerator "Ctrl+A" -command {tClip::SelectAll}
   .menu add cascade -label "Options" -underline 0 -menu [menu .menu.options]
     .menu.options add checkbutton -label "On Top" -underline 3 \
       -accelerator "F2" \
@@ -152,7 +168,7 @@ proc tClip::Menu {} {
       -variable tClip::wrap -onvalue "word" -offvalue "none" \
       -command {.text configure -wrap $tClip::wrap}
     .menu.options add separator
-    .menu.options add cascade -label "Themes" -underline 3 \
+    .menu.options add cascade -label "Theme" -underline 3 \
       -menu [menu .menu.options.themes]
       foreach theme [ttk::style theme names] {
         .menu.options.themes add radiobutton -label $theme \
@@ -194,11 +210,18 @@ proc tClip::Widgets {} {
     grid columnconfigure .lf_text .text -weight 1
 
   ttk::frame .statusbar -borderwidth 1 -relief sunken
-    ttk::label .message -textvariable tClip::msg
+    ttk::label .clips    -textvariable tClip::clips -anchor w
+    ttk::label .words    -textvariable tClip::words -anchor center
+    ttk::label .bytes    -textvariable tClip::bytes -anchor w
+    ttk::label .encoding -textvariable tClip::encoding -anchor e
     ttk::sizegrip .sizegrip
-    grid .message  -in .statusbar -row 0 -column 0 -sticky we
-    grid .sizegrip -in .statusbar -row 0 -column 1 -sticky e
-    grid columnconfigure .statusbar .message -weight 1
+    grid .clips    -in .statusbar -row 0 -column 0 -sticky we
+    grid .words    -in .statusbar -row 0 -column 1 -sticky we
+    grid .bytes    -in .statusbar -row 0 -column 2 -sticky we
+    grid .encoding -in .statusbar -row 0 -column 3 -sticky e
+    grid .sizegrip -in .statusbar -row 0 -column 4 -sticky e
+    grid columnconfigure .statusbar .words -weight 1
+    grid columnconfigure .statusbar .bytes -weight 1
 
   grid .lf_clip   -row 0 -column 0 -sticky we
   grid .lf_text   -row 1 -column 0 -sticky news
@@ -236,7 +259,7 @@ proc tClip::Bindings {} {
   bind Text <ButtonPress-3> {tk_popup .menu.edit %X %Y}
 
   bind TCombobox <<ComboboxSelected>> {
-    tClip::Add .text $tClip::clip
+    tClip::Add $tClip::clip
     %W selection clear
   }
 }
@@ -249,9 +272,9 @@ tClip::Widgets
 tClip::Bindings
 focus .text
 # initialize undo/redo menu items
-tClip::UndoStack .text
+tClip::UndoStack
 # check clipboard on program start
-tClip::Update .text
+tClip::Update
 
 wm title    . "tClip"
 wm minsize  . 230 230
@@ -261,7 +284,7 @@ wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
 # COMMAND LINE
 #
 if {$::argc > 0} {
-  tClip::Add .text [join $::argv "\n"]
+  tClip::Add [join $::argv "\n"]
 }
 # get input from OS pipe (stdout)
-chan event stdin readable {tClip::Pipe .text}
+chan event stdin readable {tClip::Pipe}
