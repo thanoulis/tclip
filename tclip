@@ -29,10 +29,10 @@ proc tClip::Message {msg} {
     incr words
   }
   set tClip::clips [list [set clips [llength $tClip::hclip]] \
-    [expr {$clips eq 1 ? "clip" : "clips"}]]
-  set tClip::words [list $words [expr {$words eq 1 ? "word" : "words"}]]
+    [expr {$clips == 1 ? "clip" : "clips"}]]
+  set tClip::words [list $words [expr {$words == 1 ? "word" : "words"}]]
   set tClip::bytes [list [set bytes [string length [encoding convertto utf-8 $msg]]] \
-    [expr {$bytes eq 1 ? "byte" : "bytes"}]]
+    [expr {$bytes == 1 ? "byte" : "bytes"}]]
 }
 
 proc tClip::Read {} {
