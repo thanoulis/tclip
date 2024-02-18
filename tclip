@@ -6,7 +6,7 @@ package require Tk
 # VARIABLES
 #
 namespace eval tClip {
-  variable version  {0.4.5}
+  variable version  {0.4.6}
   variable auto     {true}
   variable ontop    {false}
   variable wrap     {none}
@@ -113,6 +113,20 @@ proc tClip::Pipe {} {
   }
 }
 
+proc tClip::System {} {
+  tk_messageBox -title "System Information" -icon info -type ok -parent . \
+    -message "Tcl/Tk Version: [info patchlevel]" \
+    -detail "\
+      User Name:\t${::tcl_platform(user)}\n\
+      Hostname:\t[info hostname]\n\
+      OS Family:\t${::tcl_platform(platform)}\n\
+      OS Identifier:\t${::tcl_platform(os)}\n\
+      OS Version:\t${::tcl_platform(osVersion)}\n\
+      Architecture:\t${::tcl_platform(machine)}\n\
+      Window System:\t[tk windowingsystem]\n\
+      Encoding:\t[encoding system]"
+}
+
 proc tClip::About {version} {
   tk_messageBox -title "About tClip" -icon info -type ok -parent . \
     -message "tClip $version" -detail \
@@ -180,6 +194,9 @@ proc tClip::Menu {} {
       -variable tClip::auto -onvalue "true" -offvalue "false" \
       -command {tClip::Read}
   .menu add cascade -label "Help" -underline 0 -menu [menu .menu.help]
+    .menu.help add command -label "System..." -underline 0 \
+      -command {tClip::System}
+    .menu.help add separator
     .menu.help add command -label "About tClip..." -underline 0 \
       -accelerator "F1" -command {tClip::About $tClip::version}
 }
@@ -188,7 +205,7 @@ proc tClip::Menu {} {
 # WIDGETS
 #
 proc tClip::Widgets {} {
-  ttk::labelframe .lf_clip -relief flat -text "\u2022 Saved Clips:"
+  ttk::labelframe .lf_clip -relief flat -text "\u2022 Clips:"
     ttk::combobox .cb_clip -textvariable tClip::clip \
       -takefocus 0 -state readonly -exportselection true \
       -values $tClip::hclip \
@@ -210,16 +227,17 @@ proc tClip::Widgets {} {
     grid columnconfigure .lf_text .text -weight 1
 
   ttk::frame .statusbar -borderwidth 1 -relief sunken
-    ttk::label .clips    -textvariable tClip::clips -anchor w
-    ttk::label .words    -textvariable tClip::words -anchor center
-    ttk::label .bytes    -textvariable tClip::bytes -anchor w
-    ttk::label .encoding -textvariable tClip::encoding -anchor e
+    ttk::label .clips    -anchor w -textvariable tClip::clips
+    ttk::label .words    -anchor w -textvariable tClip::words
+    ttk::label .bytes    -anchor w -textvariable tClip::bytes
+    ttk::label .encoding -anchor e -textvariable tClip::encoding
     ttk::sizegrip .sizegrip
     grid .clips    -in .statusbar -row 0 -column 0 -sticky we
     grid .words    -in .statusbar -row 0 -column 1 -sticky we
     grid .bytes    -in .statusbar -row 0 -column 2 -sticky we
     grid .encoding -in .statusbar -row 0 -column 3 -sticky e
     grid .sizegrip -in .statusbar -row 0 -column 4 -sticky e
+    grid columnconfigure .statusbar .clips -weight 1
     grid columnconfigure .statusbar .words -weight 1
     grid columnconfigure .statusbar .bytes -weight 1
 
