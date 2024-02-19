@@ -1,15 +1,29 @@
 #!/usr/bin/env tclsh
 
 package require Tk
+# force utf-8 encoding (freewrap workaround)
+if {[encoding system] ne "utf-8"} {encoding system "utf-8"}
 
 ################################################################################
 # VARIABLES
 #
 namespace eval tClip {
   variable version  {0.4.6}
-  variable auto     {true}
-  variable ontop    {false}
+  variable combo    {true}
+  variable details  {true}
+  variable menu     {.menu}
+  variable status   {true}
+  variable yscroll  {true}
+  variable xscroll  {true}
+  variable ontop    {true}
   variable wrap     {none}
+  variable blink    0
+  variable block    {false}
+  variable font     {TkFixedFont}
+  variable spacing1 0
+  variable spacing2 0
+  variable spacing3 0
+  variable auto     {true}
   variable clip     {}
   variable hclip    [list]
   variable clips    {0 clips}
@@ -24,13 +38,13 @@ namespace eval tClip {
 # PROCEDURES
 #
 proc tClip::Message {msg} {
-  set words 0
+  set count 0
   foreach word [regexp -all -inline {[[:alnum:]]+} $msg] {
-    incr words
+    incr count
   }
   set tClip::clips [list [set clips [llength $tClip::hclip]] \
     [expr {$clips == 1 ? "clip" : "clips"}]]
-  set tClip::words [list $words [expr {$words == 1 ? "word" : "words"}]]
+  set tClip::words [list $count [expr {$count == 1 ? "word" : "words"}]]
   set tClip::bytes [list [set bytes [string length [encoding convertto utf-8 $msg]]] \
     [expr {$bytes == 1 ? "byte" : "bytes"}]]
 }
@@ -47,7 +61,7 @@ proc tClip::Read {} {
     }
     tClip::Message $tClip::clip
   } finally {
-    # cancel any rogue previous timers
+    # cancel any previous rogue timers
     after cancel {tClip::Read}
     if {$tClip::auto eq "true"} {
       after 1000 {tClip::Read}
@@ -99,6 +113,25 @@ proc tClip::UndoStack {{text ".text"}} {
     .menu.edit entryconfigure $item \
       -state [expr {[$text edit $action] ? "normal" : "disabled"}]
   }
+}
+
+proc tClip::ToggleView {widget show} {
+  if {$show eq "false"} {
+    grid remove $widget
+  } else {
+    grid $widget
+  }
+  focus .text
+}
+
+proc tClip::SetFont {font {text ".text"}} {
+  $text configure -font $font
+}
+
+proc tClip::SelectFont {{text ".text"}} {
+  tk fontchooser configure -title "Select Font" -parent . \
+    -font [$text cget -font] -command {tClip::SetFont}
+  tk fontchooser show
 }
 
 proc tClip::Pipe {} {
@@ -171,6 +204,26 @@ proc tClip::Menu {} {
     .menu.edit add separator
     .menu.edit add command -label "Select All" -underline 7 \
       -accelerator "Ctrl+A" -command {tClip::SelectAll}
+  .menu add cascade -label "Show" -underline 3 -menu [menu .menu.show]
+    .menu.show add checkbutton -label "Clips" -underline 0 \
+      -variable tClip::combo -onvalue "true" -offvalue "false" \
+      -command {tClip::ToggleView .lf_clip $tClip::combo}
+    .menu.show add checkbutton -label "Details" -underline 0 \
+      -variable tClip::details -onvalue "true" -offvalue "false" \
+      -command {tClip::ToggleView .lf_text $tClip::details}
+    .menu.show add separator
+    .menu.show add checkbutton -label "Menu Bar" -underline 0 \
+      -variable tClip::menu -onvalue ".menu" -offvalue "" \
+      -command {. configure -menu $tClip::menu}
+    .menu.show add checkbutton -label "Status Bar" -underline 7 \
+      -variable tClip::status -onvalue "true" -offvalue "false" \
+      -command {tClip::ToggleView .statusbar $tClip::status}
+    .menu.show add checkbutton -label "Vertical Scrollbar" -underline 0 \
+      -variable tClip::yscroll -onvalue "true" -offvalue "false" \
+      -command {tClip::ToggleView .yscroll $tClip::yscroll}
+    .menu.show add checkbutton -label "Horizontal Scrollbar" -underline 0 \
+      -variable tClip::xscroll -onvalue "true" -offvalue "false" \
+      -command {tClip::ToggleView .xscroll $tClip::xscroll}
   .menu add cascade -label "Options" -underline 0 -menu [menu .menu.options]
     .menu.options add checkbutton -label "On Top" -underline 3 \
       -accelerator "F2" \
@@ -181,6 +234,39 @@ proc tClip::Menu {} {
       -accelerator "Ctrl+W" \
       -variable tClip::wrap -onvalue "word" -offvalue "none" \
       -command {.text configure -wrap $tClip::wrap}
+    .menu.options add separator
+    .menu.options add checkbutton -label "Blink Cursor" -underline 0 \
+      -variable tClip::blink -onvalue "300" -offvalue "0" \
+      -command {.text configure -insertofftime $tClip::blink}
+    .menu.options add checkbutton -label "Block Cursor" -underline 4 \
+      -variable tClip::block -onvalue "true" -offvalue "false" \
+      -command {.text configure -blockcursor $tClip::block}
+    .menu.options add separator
+    .menu.options add command -label "Select Font..." -underline 7 \
+      -command {tClip::SelectFont}
+    .menu.options add cascade -label "Line Spacing" -underline 0 \
+      -menu [menu .menu.options.spacing]
+      .menu.options.spacing add cascade -label "Space Above Lines" -underline 6 \
+        -menu [menu .menu.options.spacing.1]
+        for {set i 0} {$i <= 9} {incr i} {
+          .menu.options.spacing.1 add radiobutton -label $i -underline 0 \
+            -variable tClip::spacing1 -value $i \
+            -command {.text configure -spacing1 $tClip::spacing1}
+        }
+      .menu.options.spacing add cascade -label "Space Between Warps" -underline 9 \
+        -menu [menu .menu.options.spacing.2]
+        for {set i 0} {$i <= 9} {incr i} {
+          .menu.options.spacing.2 add radiobutton -label $i -underline 0 \
+            -variable tClip::spacing2 -value $i \
+            -command {.text configure -spacing2 $tClip::spacing2}
+        }
+      .menu.options.spacing add cascade -label "Space Below Lines" -underline 6 \
+        -menu [menu .menu.options.spacing.3]
+        for {set i 0} {$i <= 9} {incr i} {
+          .menu.options.spacing.3 add radiobutton -label $i -underline 0 \
+            -variable tClip::spacing3 -value $i \
+            -command {.text configure -spacing3 $tClip::spacing3}
+        }
     .menu.options add separator
     .menu.options add cascade -label "Theme" -underline 3 \
       -menu [menu .menu.options.themes]
@@ -214,8 +300,11 @@ proc tClip::Widgets {} {
     grid columnconfigure .lf_clip .cb_clip -weight 1
 
   ttk::labelframe .lf_text -relief flat -text "\u2022 Details:"
-    tk::text .text -relief sunken -highlightthickness 0 -takefocus 0 \
-      -wrap $tClip::wrap -undo true -autoseparators true \
+    tk::text .text -relief sunken -highlightthickness 0 -takefocus 1 \
+      -font $tClip::font -undo true -autoseparators true \
+      -insertunfocussed hollow -wrap $tClip::wrap \
+      -blockcursor $tClip::block -insertofftime $tClip::blink \
+      -spacing1 $tClip::spacing1 -spacing2 $tClip::spacing2 -spacing3 $tClip::spacing3 \
       -tabstyle wordprocessor -insertofftime 0 \
       -xscrollcommand {.xscroll set} -yscrollcommand {.yscroll set}
     ttk::scrollbar .yscroll -orient vertical   -command {.text yview}
@@ -266,6 +355,12 @@ proc tClip::Bindings {} {
   bind all <Control-q> {.menu.clipboard invoke "Exit"}
   bind all <F2>        {.menu.options invoke "On Top"}
   bind all <F1>        {.menu.help invoke "About tClip..."}
+  bind all <Control-ButtonPress-3> {focus %W; tk_popup .menu %X %Y}
+  # toggle menu "Set Font..." state
+  bind all <<TkFontchooserVisibility>> {
+    .menu.options entryconfigure "Select Font..." \
+      -state [expr {[tk fontchooser configure -visible] ? "disabled" : "normal"}]
+  }
 
   bind Text <Control-l>     {.menu.clipboard invoke "Clear Clipboard"}
   bind Text <Control-z>     {.menu.edit invoke "Undo"}
@@ -295,7 +390,7 @@ tClip::UndoStack
 tClip::Update
 
 wm title    . "tClip"
-wm minsize  . 230 230
+wm minsize  . 200 20
 wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
 
 ################################################################################
