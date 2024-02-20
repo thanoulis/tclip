@@ -389,9 +389,11 @@ tClip::UndoStack
 # check clipboard on program start
 tClip::Update
 
-wm title    . "tClip"
-wm minsize  . 200 20
-wm protocol . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
+
+wm title      . "tClip"
+wm minsize    . 200 20
+wm attributes . -topmost $tClip::ontop
+wm protocol   . WM_DELETE_WINDOW {.menu.clipboard invoke "Exit"}
 
 ################################################################################
 # COMMAND LINE
