@@ -17,7 +17,7 @@ namespace eval tClip {
   variable xscroll  {true}
   variable ontop    {true}
   variable wrap     {none}
-  variable blink    0
+  variable blink    500
   variable block    {false}
   variable font     {TkFixedFont}
   variable spacing1 0
@@ -228,7 +228,7 @@ proc tClip::Menu {} {
       -command {.text configure -wrap $tClip::wrap}
     .menu.options add separator
     .menu.options add checkbutton -label "Blink Cursor" -underline 0 \
-      -variable tClip::blink -onvalue "300" -offvalue "0" \
+      -variable tClip::blink -onvalue "500" -offvalue "0" \
       -command {.text configure -insertofftime $tClip::blink}
     .menu.options add checkbutton -label "Block Cursor" -underline 4 \
       -variable tClip::block -onvalue "true" -offvalue "false" \
@@ -296,8 +296,8 @@ proc tClip::Widgets {} {
       -font $tClip::font -undo true -autoseparators true \
       -insertunfocussed hollow -wrap $tClip::wrap \
       -blockcursor $tClip::block -insertofftime $tClip::blink \
-      -spacing1 $tClip::spacing1 -spacing2 $tClip::spacing2 -spacing3 $tClip::spacing3 \
-      -tabstyle wordprocessor -insertofftime 0 \
+      -spacing1 $tClip::spacing1 -spacing2 $tClip::spacing2 \
+      -spacing3 $tClip::spacing3 -tabstyle wordprocessor \
       -xscrollcommand {.xscroll set} -yscrollcommand {.yscroll set}
     ttk::scrollbar .yscroll -orient vertical   -command {.text yview}
     ttk::scrollbar .xscroll -orient horizontal -command {.text xview}
