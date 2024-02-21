@@ -54,6 +54,7 @@ proc tClip::Read {} {
     set tClip::clip [clipboard get -type $tClip::type]
   } on error msg {
     # do nothing
+    return 1
   } on ok msg {
     # update combobox list if not listed already
     if {$tClip::clip ni $tClip::hclip} {
@@ -71,18 +72,9 @@ proc tClip::Read {} {
 
 proc tClip::Update {{text ".text"}} {
   tClip::Read
-  set old [$text get 0.0 "end -1 indices"]
-  set oldcursor [$text index insert]
   $text delete 0.0 end
   $text insert end $tClip::clip
-  set new [$text get 0.0 "end -1 indices"]
-  # in user input keep cursor in place
-  if {[string equal $old $new] == 1} {
-    $text mark set insert $oldcursor
-  } else {
-    $text mark set insert 0.0
-    $text see insert
-  }
+  $text see insert
   focus $text
 }
 
@@ -246,21 +238,21 @@ proc tClip::Menu {} {
       -command {tClip::SelectFont}
     .menu.options add cascade -label "Line Spacing" -underline 0 \
       -menu [menu .menu.options.spacing]
-      .menu.options.spacing add cascade -label "Space Above Lines" -underline 6 \
+      .menu.options.spacing add cascade -label "Above Lines" -underline 0 \
         -menu [menu .menu.options.spacing.1]
         for {set i 0} {$i <= 9} {incr i} {
           .menu.options.spacing.1 add radiobutton -label $i -underline 0 \
             -variable tClip::spacing1 -value $i \
             -command {.text configure -spacing1 $tClip::spacing1}
         }
-      .menu.options.spacing add cascade -label "Space Between Warps" -underline 9 \
+      .menu.options.spacing add cascade -label "Between Wraps" -underline 8 \
         -menu [menu .menu.options.spacing.2]
         for {set i 0} {$i <= 9} {incr i} {
           .menu.options.spacing.2 add radiobutton -label $i -underline 0 \
             -variable tClip::spacing2 -value $i \
             -command {.text configure -spacing2 $tClip::spacing2}
         }
-      .menu.options.spacing add cascade -label "Space Below Lines" -underline 6 \
+      .menu.options.spacing add cascade -label "Below Lines" -underline 0 \
         -menu [menu .menu.options.spacing.3]
         for {set i 0} {$i <= 9} {incr i} {
           .menu.options.spacing.3 add radiobutton -label $i -underline 0 \
